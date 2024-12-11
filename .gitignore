@@ -1,0 +1,7 @@
+app
+.docker/mysql
+.docker/nginx/certs
+.docker/nginx/log
+.env
+.idea
+.vscode

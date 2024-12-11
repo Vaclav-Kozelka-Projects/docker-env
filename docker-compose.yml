@@ -1,0 +1,66 @@
+services:
+  nginx:
+    container_name: app-nginx
+    image: local-app/nginx
+    build:
+      context: .docker/nginx
+      args:
+        PROJECT_DOMAIN: ${PROJECT_DOMAIN}
+        PROJECT_CONTAINER_DIR: ${PROJECT_CONTAINER_DIR}
+    volumes:
+      - .docker/nginx/log:/var/log/nginx
+      - ${PROJECT_LOCAL_DIR}:${PROJECT_CONTAINER_DIR}
+    ports:
+      - ${PROJECT_HTTP_PORT}:80
+      - ${PROJECT_HTTPS_PORT}:443
+    env_file:
+      - .env
+    working_dir: ${PROJECT_CONTAINER_DIR}
+    networks:
+      - app-network
+    depends_on:
+      - php
+
+  php:
+    container_name: app-php
+    image: local-app/php
+    build:
+      context: .docker/php
+      args:
+        PROJECT_CONTAINER_DIR: ${PROJECT_CONTAINER_DIR}
+    volumes:
+      - ${PROJECT_LOCAL_DIR}:${PROJECT_CONTAINER_DIR}
+    env_file:
+      - .env
+    working_dir: ${PROJECT_CONTAINER_DIR}
+    networks:
+      - app-network
+
+  db:
+    image: mysql
+    ports:
+      - ${MYSQL_PORT}:3306
+    volumes:
+      - ${MYSQL_DATA}:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASS}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASS}
+      MYSQL_DATABASE: ${MYSQL_DBNAME}
+    networks:
+      - app-network
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    name: app-network
+    driver: bridge
